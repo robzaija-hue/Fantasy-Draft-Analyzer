@@ -1,11 +1,30 @@
 import * as XLSX from 'xlsx'
 
+const SOCCER_POSITIONS = ['F', 'M', 'D', 'G']
+const FOOTBALL_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']
+
+export const SPORT_CONFIG = {
+  soccer: {
+    label: 'Soccer',
+    icon: '⚽',
+    positions: SOCCER_POSITIONS,
+    normalizedSheet: 'Football Fantasy Drafts',
+  },
+  football: {
+    label: 'Football',
+    icon: '🏈',
+    positions: FOOTBALL_POSITIONS,
+    normalizedSheet: 'Football Fantasy Drafts',
+  },
+}
+
 /**
  * Parse the original position-row format used in Sheet1.
- * Each team starts with a team-name row, then position rows (F/M/D/G)
+ * Each team starts with a team-name row, then position rows
  * where the remaining cells in that row are players of that position.
  */
-function parseLegacySheet(rawRows) {
+function parseLegacySheet(rawRows, positions) {
+  const posSet = new Set(positions.map((p) => p.toUpperCase()))
   const teams = []
   let currentTeam = null
   let currentPosition = null
@@ -19,7 +38,7 @@ function parseLegacySheet(rawRows) {
 
     const first = values[0].toUpperCase()
 
-    if (['F', 'M', 'D', 'G'].includes(first)) {
+    if (posSet.has(first)) {
       currentPosition = first
       if (currentTeam === null) continue
 
@@ -43,7 +62,7 @@ function parseLegacySheet(rawRows) {
  * Draft / Competition | Position | Player
  * The first row is the header.
  */
-function parseNormalizedSheet(rawRows) {
+function parseNormalizedSheet(rawRows, positions) {
   if (rawRows.length < 2) return []
 
   const header = rawRows[0].map((c) => String(c ?? '').trim())
@@ -58,6 +77,7 @@ function parseNormalizedSheet(rawRows) {
     player: header.indexOf('Player'),
   }
 
+  const posSet = new Set(positions.map((p) => p.toUpperCase()))
   const teamsMap = new Map()
 
   for (let i = 1; i < rawRows.length; i++) {
@@ -67,7 +87,7 @@ function parseNormalizedSheet(rawRows) {
     const player = String(row[idx.player] ?? '').trim()
 
     if (!teamName || !player) continue
-    if (!['F', 'M', 'D', 'G'].includes(position)) continue
+    if (!posSet.has(position)) continue
 
     if (!teamsMap.has(teamName)) {
       teamsMap.set(teamName, { team: teamName, players: [] })
@@ -82,8 +102,13 @@ function parseNormalizedSheet(rawRows) {
 /**
  * Read an uploaded Excel file and return { sheetNames, sheets }.
  * sheets is a map of sheetName -> array of teams.
+ * sportKey selects which position set to use for validation.
  */
-export async function parseWorkbook(file) {
+export async function parseWorkbook(file, sportKey = 'soccer') {
+  const config = SPORT_CONFIG[sportKey] || SPORT_CONFIG.soccer
+  const positions = config.positions
+  const normalizedSheet = config.normalizedSheet
+
   const buffer = await file.arrayBuffer()
   const workbook = XLSX.read(buffer, { type: 'array' })
   const sheetNames = workbook.SheetNames
@@ -97,10 +122,10 @@ export async function parseWorkbook(file) {
       defval: null,
     })
 
-    if (sheetName === 'Football Fantasy Drafts') {
-      sheets[sheetName] = parseNormalizedSheet(rawRows)
+    if (sheetName === normalizedSheet) {
+      sheets[sheetName] = parseNormalizedSheet(rawRows, positions)
     } else {
-      sheets[sheetName] = parseLegacySheet(rawRows)
+      sheets[sheetName] = parseLegacySheet(rawRows, positions)
     }
   }
 

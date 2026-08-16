@@ -14,6 +14,7 @@ export default function HistoricalTeamsTab({
   teamNames,
   selectedTeam,
   onSelectTeam,
+  positions = ['F', 'M', 'D', 'G'],
 }) {
   const teamRows = useMemo(
     () => getTeamRows(rows, selectedTeam),
@@ -27,7 +28,10 @@ export default function HistoricalTeamsTab({
     }))
   }, [teamRows])
 
-  const counts = useMemo(() => positionCounts(teamRows), [teamRows])
+  const counts = useMemo(
+    () => positionCounts(teamRows, positions),
+    [teamRows, positions],
+  )
 
   const similarityData = useMemo(
     () => similarTeams(rows, teamNames, selectedTeam),
@@ -72,8 +76,8 @@ export default function HistoricalTeamsTab({
 
       <div className="space-y-3">
         <SectionHeader>Team summary</SectionHeader>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {['F', 'M', 'D', 'G'].map((pos) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {positions.map((pos) => (
             <Metric
               key={pos}
               label={pos}

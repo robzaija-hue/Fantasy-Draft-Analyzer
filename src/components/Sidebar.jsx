@@ -1,57 +1,28 @@
-import { useRef, useState } from 'react'
-import { parseWorkbook, flattenTeams } from '../utils/parseExcel'
+import { useRef } from 'react'
+import { SPORT_CONFIG } from '../utils/parseExcel'
 
 /**
  * Sidebar: file upload + sheet selector.
- * Calls onDataLoaded with { sheetNames, selectedSheet, teams, rows }.
+ * Controlled component — all state is passed in from the parent.
  */
-export default function Sidebar({ onDataLoaded, onClear, loading, error }) {
+export default function Sidebar({
+  sportKey,
+  fileName,
+  sheetNames,
+  selectedSheet,
+  error,
+  onFile,
+  onSheetChange,
+  onClear,
+}) {
   const inputRef = useRef(null)
-  const [sheetNames, setSheetNames] = useState([])
-  const [sheets, setSheets] = useState({})
-  const [selectedSheet, setSelectedSheet] = useState('')
-  const [fileName, setFileName] = useState('')
+  const config = SPORT_CONFIG[sportKey] || SPORT_CONFIG.soccer
 
-  const handleFile = async (file) => {
-    if (!file) return
-    setFileName(file.name)
-    try {
-      const { sheetNames: names, sheets: parsed } = await parseWorkbook(file)
-      setSheetNames(names)
-      setSheets(parsed)
-
-      const defaultSheet = names.includes('Football Fantasy Drafts')
-        ? 'Football Fantasy Drafts'
-        : names[0]
-
-      setSelectedSheet(defaultSheet)
-      emitData(parsed, defaultSheet, onDataLoaded)
-    } catch (e) {
-      onDataLoaded({ error: e.message })
-    }
-  }
-
-  const emitData = (parsed, sheetName, cb) => {
-    const teams = parsed[sheetName] || []
-    const rows = flattenTeams(teams)
-    cb({
-      sheetNames: Object.keys(parsed),
-      selectedSheet: sheetName,
-      teams,
-      rows,
-    })
-  }
-
-  const handleSheetChange = (sheetName) => {
-    setSelectedSheet(sheetName)
-    emitData(sheets, sheetName, onDataLoaded)
+  const handleFile = (file) => {
+    if (file) onFile(file)
   }
 
   const handleClear = () => {
-    setSheetNames([])
-    setSheets({})
-    setSelectedSheet('')
-    setFileName('')
     if (inputRef.current) inputRef.current.value = ''
     onClear()
   }
@@ -60,7 +31,7 @@ export default function Sidebar({ onDataLoaded, onClear, loading, error }) {
     <aside className="flex w-full flex-col gap-5 border-r border-slate-200 bg-white p-5 lg:w-72 lg:min-h-screen">
       <div>
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Historical Database
+          {config.label} Historical Database
         </h2>
       </div>
 
@@ -118,7 +89,7 @@ export default function Sidebar({ onDataLoaded, onClear, loading, error }) {
           </label>
           <select
             value={selectedSheet}
-            onChange={(e) => handleSheetChange(e.target.value)}
+            onChange={(e) => onSheetChange(e.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           >
             {sheetNames.map((name) => (
@@ -128,10 +99,6 @@ export default function Sidebar({ onDataLoaded, onClear, loading, error }) {
             ))}
           </select>
         </div>
-      )}
-
-      {loading && (
-        <div className="text-sm text-slate-500">Loading workbook...</div>
       )}
 
       {error && (

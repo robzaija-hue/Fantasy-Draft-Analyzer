@@ -315,9 +315,11 @@ export function similarTeams(rows, teamNames, selectedTeam) {
 
 /**
  * Count players per position on a team.
+ * positions: array of position codes to count (e.g. ['F','M','D','G'] or ['QB','RB','WR','TE','K','DEF'])
  */
-export function positionCounts(teamRows) {
-  const counts = { F: 0, M: 0, D: 0, G: 0 }
+export function positionCounts(teamRows, positions = ['F', 'M', 'D', 'G']) {
+  const counts = {}
+  for (const p of positions) counts[p] = 0
   for (const r of teamRows) {
     if (counts[r.position] !== undefined) counts[r.position]++
   }
