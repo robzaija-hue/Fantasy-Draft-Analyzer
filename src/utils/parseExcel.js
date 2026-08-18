@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx'
 
 const SOCCER_POSITIONS = ['F', 'M', 'D', 'G']
-const FOOTBALL_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']
+const FOOTBALL_POSITIONS = ['QB', 'RB', 'WR', 'TE']
 
 export const SPORT_CONFIG = {
   soccer: {
@@ -14,7 +14,7 @@ export const SPORT_CONFIG = {
     label: 'Football',
     icon: '🏈',
     positions: FOOTBALL_POSITIONS,
-    normalizedSheet: 'Football Fantasy Drafts',
+    normalizedSheet: null,
   },
 }
 
@@ -122,7 +122,7 @@ export async function parseWorkbook(file, sportKey = 'soccer') {
       defval: null,
     })
 
-    if (sheetName === normalizedSheet) {
+    if (normalizedSheet && sheetName === normalizedSheet) {
       sheets[sheetName] = parseNormalizedSheet(rawRows, positions)
     } else {
       sheets[sheetName] = parseLegacySheet(rawRows, positions)
@@ -155,3 +155,6 @@ export function flattenTeams(teams) {
 export function displayName(player, position) {
   return `${player} (${position})`
 }
+
+
+export { SPORT_CONFIG }

@@ -34,8 +34,7 @@ export function useSportState(sportKey) {
         setSheetNames(names)
         setSheets(parsed)
 
-        const config = sportKey === 'football' ? 'Football Fantasy Drafts' : names[0]
-        const defaultSheet = names.includes(config) ? config : names[0]
+        const defaultSheet = names[0]
 
         setSelectedSheet(defaultSheet)
         const teams = parsed[defaultSheet] || []
