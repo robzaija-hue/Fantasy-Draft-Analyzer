@@ -155,6 +155,3 @@ export function flattenTeams(teams) {
 export function displayName(player, position) {
   return `${player} (${position})`
 }
-
-
-export { SPORT_CONFIG }
